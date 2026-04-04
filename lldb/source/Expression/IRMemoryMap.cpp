@@ -62,6 +62,7 @@ lldb::addr_t IRMemoryMap::FindSpace(size_t size) {
   const bool process_is_alive = process_sp && process_sp->IsAlive();
 
   lldb::addr_t ret = LLDB_INVALID_ADDRESS;
+  lldb_private::Log *log = GetLog(LLDBLog::Expressions);
   if (size == 0)
     return ret;
 
@@ -115,7 +116,28 @@ lldb::addr_t IRMemoryMap::FindSpace(size_t size) {
     MemoryRegionInfo region_info;
     Status err = process_sp->GetMemoryRegionInfo(ret, region_info);
     if (err.Success()) {
+      constexpr uint64_t kMaxRegionProbes = 65536;
+      uint64_t region_probe_count = 0;
       while (true) {
+        if (++region_probe_count > kMaxRegionProbes) {
+          LLDB_LOGF(log,
+                    "IRMemoryMap::%s aborting region walk after %" PRIu64
+                    " probes; falling back to default allocation base",
+                    __FUNCTION__, (uint64_t)region_probe_count);
+          ret = LLDB_INVALID_ADDRESS;
+          break;
+        }
+
+        const lldb::addr_t region_end = region_info.GetRange().GetRangeEnd();
+        if (region_end <= ret) {
+          LLDB_LOGF(log,
+                    "IRMemoryMap::%s aborting region walk: non-increasing "
+                    "region end (ret=0x%" PRIx64 ", end=0x%" PRIx64 ")",
+                    __FUNCTION__, (uint64_t)ret, (uint64_t)region_end);
+          ret = LLDB_INVALID_ADDRESS;
+          break;
+        }
+
         if (region_info.GetRange().GetRangeBase() == 0 &&
             region_info.GetRange().GetRangeEnd() < end_of_memory) {
           // Don't use a region that starts at address 0,
@@ -140,7 +162,11 @@ lldb::addr_t IRMemoryMap::FindSpace(size_t size) {
         err = process_sp->GetMemoryRegionInfo(
             region_info.GetRange().GetRangeEnd(), region_info);
         if (err.Fail()) {
-          lldbassert(0 && "GetMemoryRegionInfo() succeeded, then failed");
+          LLDB_LOGF(log,
+                    "IRMemoryMap::%s stopping region walk after "
+                    "GetMemoryRegionInfo failure at 0x%" PRIx64 ": %s",
+                    __FUNCTION__, (uint64_t)region_end,
+                    err.AsCString("<no error>"));
           ret = LLDB_INVALID_ADDRESS;
           break;
         }

@@ -898,6 +898,12 @@ set(riscv64_SOURCES
   ${riscv_SOURCES}
 )
 
+set(little64_SOURCES
+  little64/fp_mode.c
+  ${GENERIC_SOURCES}
+  ${GENERIC_TF_SOURCES}
+)
+
 set(sparc_SOURCES ${GENERIC_SOURCES} ${GENERIC_TF_SOURCES})
 set(sparcv9_SOURCES ${GENERIC_SOURCES} ${GENERIC_TF_SOURCES})
 

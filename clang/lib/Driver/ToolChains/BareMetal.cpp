@@ -57,6 +57,13 @@ static bool isX86BareMetal(const llvm::Triple &Triple) {
          Triple.getEnvironmentName() == "elf";
 }
 
+/// Is the triple little64-*-none-elf?
+static bool isLittle64BareMetal(const llvm::Triple &Triple) {
+  return Triple.getArch() == llvm::Triple::little64 &&
+         Triple.getOS() == llvm::Triple::UnknownOS &&
+         Triple.getEnvironmentName() == "elf";
+}
+
 static bool findRISCVMultilibs(const Driver &D,
                                const llvm::Triple &TargetTriple,
                                const ArgList &Args, DetectedMultilibs &Result) {
@@ -357,7 +364,8 @@ void BareMetal::findMultilibs(const Driver &D, const llvm::Triple &Triple,
 bool BareMetal::handlesTarget(const llvm::Triple &Triple) {
   return arm::isARMEABIBareMetal(Triple) ||
          aarch64::isAArch64BareMetal(Triple) || isRISCVBareMetal(Triple) ||
-         isPPCBareMetal(Triple) || isX86BareMetal(Triple);
+         isPPCBareMetal(Triple) || isX86BareMetal(Triple) ||
+         isLittle64BareMetal(Triple);
 }
 
 Tool *BareMetal::buildLinker() const {

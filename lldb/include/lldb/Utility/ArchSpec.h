@@ -237,6 +237,8 @@ public:
 
     eCore_wasm32,
 
+    eCore_little64,
+
     kNumCores,
 
     kCore_invalid,

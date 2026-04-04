@@ -23,6 +23,7 @@
 #include "lldb/Utility/LLDBLog.h"
 #include "lldb/Utility/Log.h"
 #include "lldb/ValueObject/ValueObjectConstResult.h"
+#include "llvm/TargetParser/Triple.h"
 
 #include <memory>
 
@@ -165,17 +166,58 @@ void ThreadPlanStepOut::SetupReturnAddress(
     // Perform some additional validation on the return address.
     uint32_t permissions = 0;
     Log *log = GetLog(LLDBLog::Step);
+    const bool is_little64 =
+        m_process.GetTarget().GetArchitecture().GetTriple().getArch() ==
+        llvm::Triple::little64;
+    bool use_ra_fallback = false;
     if (!m_process.GetLoadAddressPermissions(m_return_addr, permissions)) {
       LLDB_LOGF(log, "ThreadPlanStepOut(%p): Return address (0x%" PRIx64
                 ") permissions not found.", static_cast<void *>(this),
                 m_return_addr);
+      use_ra_fallback = is_little64;
     } else if (!(permissions & ePermissionsExecutable)) {
-      m_constructor_errors.Printf("Return address (0x%" PRIx64
-                                  ") did not point to executable memory.",
-                                  m_return_addr);
-      LLDB_LOGF(log, "ThreadPlanStepOut(%p): %s", static_cast<void *>(this),
-                m_constructor_errors.GetData());
-      return;
+      if (!is_little64) {
+        m_constructor_errors.Printf("Return address (0x%" PRIx64
+                                    ") did not point to executable memory.",
+                                    m_return_addr);
+        LLDB_LOGF(log, "ThreadPlanStepOut(%p): %s", static_cast<void *>(this),
+                  m_constructor_errors.GetData());
+        return;
+      }
+      use_ra_fallback = true;
+    }
+
+    if (use_ra_fallback) {
+      addr_t fallback_return_addr = LLDB_INVALID_ADDRESS;
+      if (immediate_return_from_sp) {
+        RegisterContextSP reg_ctx_sp = immediate_return_from_sp->GetRegisterContext();
+        if (reg_ctx_sp) {
+          const RegisterInfo *ra_reg_info = reg_ctx_sp->GetRegisterInfo(
+              eRegisterKindGeneric, LLDB_REGNUM_GENERIC_RA);
+          if (ra_reg_info) {
+            fallback_return_addr =
+                reg_ctx_sp->ReadRegisterAsUnsigned(ra_reg_info, LLDB_INVALID_ADDRESS);
+          }
+        }
+      }
+
+      if (fallback_return_addr != LLDB_INVALID_ADDRESS) {
+        uint32_t fallback_permissions = 0;
+        if (!m_process.GetLoadAddressPermissions(fallback_return_addr,
+                                                 fallback_permissions) ||
+            (fallback_permissions & ePermissionsExecutable)) {
+          m_return_addr = fallback_return_addr;
+        }
+      }
+
+      if (m_return_addr != fallback_return_addr) {
+        m_constructor_errors.Printf("Return address (0x%" PRIx64
+                                    ") did not point to executable memory.",
+                                    m_return_addr);
+        LLDB_LOGF(log, "ThreadPlanStepOut(%p): %s", static_cast<void *>(this),
+                  m_constructor_errors.GetData());
+        return;
+      }
     }
 
     Breakpoint *return_bp = 
@@ -293,6 +335,14 @@ bool ThreadPlanStepOut::ValidatePlan(Stream *error) {
   }
 
   if (m_return_bp_id == LLDB_INVALID_BREAK_ID) {
+    if (!m_step_out_further_plan_sp) {
+      m_step_out_further_plan_sp =
+          QueueStepOutFromHerePlan(m_flags, eFrameCompareOlder, m_status);
+    }
+
+    if (m_step_out_further_plan_sp)
+      return true;
+
     if (error) {
       error->PutCString("Could not create return address breakpoint.");
       if (m_constructor_errors.GetSize() > 0) {
@@ -433,6 +483,9 @@ StateType ThreadPlanStepOut::GetPlanRunState() { return eStateRunning; }
 bool ThreadPlanStepOut::DoWillResume(StateType resume_state,
                                      bool current_plan) {
   if (m_step_out_to_inline_plan_sp || m_step_through_inline_plan_sp)
+    return true;
+
+  if (m_step_out_further_plan_sp)
     return true;
 
   if (m_return_bp_id == LLDB_INVALID_BREAK_ID)

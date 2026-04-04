@@ -1,0 +1,40 @@
+# RUN: llc -mtriple=little64 -run-pass=little64-expand-pseudos -o - %s | FileCheck %s
+
+--- |
+  target triple = "little64"
+
+  define i64 @expand_call_ret(i64 %x) {
+  entry:
+    ret i64 %x
+  }
+...
+---
+name:            expand_call_ret
+alignment:       2
+tracksRegLiveness: true
+registers:
+  - { id: 0, class: gpr, preferred-register: '', flags: [  ] }
+  - { id: 1, class: gpr, preferred-register: '', flags: [  ] }
+liveins:
+  - { reg: '$r10', virtual-reg: '%0' }
+  - { reg: '$r12', virtual-reg: '%1' }
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r10, $r12
+
+    %0:gpr = COPY $r10
+    %1:gpr = COPY $r12
+    CALL killed %1, csr_little64, implicit-def $r1, implicit-def dead $r2, implicit-def dead $r3, implicit-def dead $r4, implicit-def dead $r5, implicit-def dead $r14, implicit $r13, implicit $r10, implicit-def $r13
+    $r1 = COPY %0
+    RET $r1, implicit $r14
+
+...
+
+# CHECK-LABEL: name:            expand_call_ret
+# CHECK: bb.0.entry:
+# CHECK-NOT: CALL
+# CHECK: $r14 = MOVErr $r15, 2
+# CHECK: $r15 = MOVErr killed %1, 0
+# CHECK-NOT: RET
+# CHECK: JMPr $r14

@@ -18,6 +18,7 @@ set(SPARCV9 sparcv9)
 set(WASM32 wasm32)
 set(WASM64 wasm64)
 set(VE ve)
+set(LITTLE64 little64)
 
 if (COMPILER_RT_PROFILE_BAREMETAL)
   set(ARM32

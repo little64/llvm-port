@@ -643,6 +643,8 @@ const char *tools::getLDMOption(const llvm::Triple &T, const ArgList &Args) {
     return "elf_x86_64";
   case llvm::Triple::ve:
     return "elf64ve";
+  case llvm::Triple::little64:
+    return "elf64little64";
   case llvm::Triple::csky:
     return "cskyelf_linux";
   default:

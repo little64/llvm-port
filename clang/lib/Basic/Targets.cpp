@@ -23,6 +23,7 @@
 #include "Targets/DirectX.h"
 #include "Targets/Hexagon.h"
 #include "Targets/Lanai.h"
+#include "Targets/Little64.h"
 #include "Targets/LoongArch.h"
 #include "Targets/M68k.h"
 #include "Targets/MSP430.h"
@@ -132,6 +133,11 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
 
   case llvm::Triple::lanai:
     return std::make_unique<LanaiTargetInfo>(Triple, Opts);
+
+  case llvm::Triple::little64:
+    if (os == llvm::Triple::Linux)
+      return std::make_unique<LinuxTargetInfo<Little64TargetInfo>>(Triple, Opts);
+    return std::make_unique<Little64TargetInfo>(Triple, Opts);
 
   case llvm::Triple::aarch64_32:
     if (Triple.isOSDarwin())

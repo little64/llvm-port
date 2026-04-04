@@ -167,6 +167,8 @@ std::string Linux::getMultiarchTriple(const Driver &D,
     if (IsAndroid)
       return "riscv64-linux-android";
     return "riscv64-linux-gnu";
+  case llvm::Triple::little64:
+    return "little64-linux-gnu";
   case llvm::Triple::sparc:
     return "sparc-linux-gnu";
   case llvm::Triple::sparcv9:
@@ -614,6 +616,10 @@ std::string Linux::getDynamicLinker(const ArgList &Args) const {
   default:
     llvm_unreachable("unsupported architecture");
 
+  case llvm::Triple::little64:
+    LibDir = "lib";
+    Loader = "ld-linux-little64.so.1";
+    break;
   case llvm::Triple::aarch64:
     LibDir = "lib";
     Loader = "ld-linux-aarch64.so.1";

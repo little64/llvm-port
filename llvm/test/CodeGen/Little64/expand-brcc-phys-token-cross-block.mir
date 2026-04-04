@@ -1,0 +1,55 @@
+# RUN: llc -mtriple=little64 -run-pass=little64-expand-pseudos -o - %s | FileCheck %s
+
+--- |
+  target triple = "little64"
+
+  define i64 @expand_brcc_phys_token_cross_block(i64 %x) {
+  entry:
+    ret i64 %x
+  }
+...
+---
+name:            expand_brcc_phys_token_cross_block
+alignment:       2
+tracksRegLiveness: true
+liveins:
+  - { reg: '$r1' }
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    successors: %bb.2(0x40000000), %bb.1(0x40000000)
+    liveins: $r1
+
+    $r3 = MOVErr killed $r1, 0
+    BRCC %bb.2, 1, killed $r3, $r0
+    JMP %bb.1
+
+  bb.1:
+    successors: %bb.2(0x40000000), %bb.3(0x40000000)
+    liveins: $r1, $r3
+
+    $r1 = MOVErr killed $r0, 0
+    BRCC %bb.2, 0, killed $r3, $r0
+    JMP %bb.3
+
+  bb.2:
+    liveins: $r1
+
+    RET $r1, implicit $r14
+
+  bb.3:
+    $r1 = MOVErr $r0, 0
+    RET $r1, implicit $r14
+
+...
+
+# CHECK-LABEL: name:            expand_brcc_phys_token_cross_block
+# CHECK: bb.0.entry:
+# CHECK: TEST $r0, killed $r3
+# CHECK: JUMP_Z %bb.1
+# CHECK: JMP %bb.2
+# CHECK: bb.1:
+# CHECK: $r1 = MOVErr killed $r0, 0
+# CHECK-NEXT: TEST $r0, killed $r3
+# CHECK-NEXT: JUMP_Z %bb.2
+# CHECK-NEXT: JMP %bb.3

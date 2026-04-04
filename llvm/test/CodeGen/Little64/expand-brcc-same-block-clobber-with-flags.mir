@@ -1,0 +1,46 @@
+# RUN: llc -mtriple=little64 -run-pass=little64-expand-pseudos -o - %s | FileCheck %s
+
+--- |
+  target triple = "little64"
+
+  define i64 @expand_brcc_same_block_clobber_with_flags(i64 %x, i64 %y) {
+  entry:
+    ret i64 %x
+  }
+...
+---
+name:            expand_brcc_same_block_clobber_with_flags
+alignment:       2
+tracksRegLiveness: true
+liveins:
+  - { reg: '$r1' }
+  - { reg: '$r5' }
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    successors: %bb.1(0x40000000), %bb.2(0x40000000)
+    liveins: $r1, $r5
+
+    $r3 = MOVErr killed $r1, 0
+    $r1 = MOVErr killed $r5, 0
+    $r2 = MOVErr $r0, 0
+    $r2 = ADD killed $r0, killed $r2, implicit-def $flags
+    BRCC %bb.1, 1, killed $r3, $r0
+    JMP %bb.2
+
+  bb.1:
+    liveins: $r1
+
+    RET $r1, implicit $r14
+
+  bb.2:
+    $r1 = MOVErr $r0, 0
+    RET $r1, implicit $r14
+
+...
+
+# CHECK-LABEL: name:            expand_brcc_same_block_clobber_with_flags
+# CHECK: bb.0.entry:
+# CHECK: $r2 = ADD killed $r0, killed $r2
+# CHECK-NEXT: TEST $r0, killed $r3
+# CHECK-NEXT: JUMP_Z %bb.2

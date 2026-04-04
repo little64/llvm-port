@@ -325,6 +325,7 @@ enum {
   EM_VE = 251,            // NEC SX-Aurora VE
   EM_CSKY = 252,          // C-SKY 32-bit processor
   EM_LOONGARCH = 258,     // LoongArch
+  EM_LITTLE64 = 0x4C36,  // Little-64 custom 64-bit RISC ISA
 };
 
 // Object file classes.
@@ -703,6 +704,11 @@ enum {
 // ELF Relocation type for Lanai.
 enum {
 #include "ELFRelocs/Lanai.def"
+};
+
+// ELF Relocation type for Little64.
+enum {
+#include "ELFRelocs/Little64.def"
 };
 
 // RISCV Specific e_flags

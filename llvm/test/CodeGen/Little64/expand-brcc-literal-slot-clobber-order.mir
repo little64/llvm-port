@@ -1,0 +1,50 @@
+# RUN: llc -mtriple=little64 -run-pass=little64-expand-pseudos -o - %s | FileCheck %s
+
+--- |
+  target triple = "little64"
+
+  declare i64 @ext_target(i64)
+
+  define i64 @expand_brcc_literal_slot_clobber_order(i64 %x) {
+  entry:
+    ret i64 %x
+  }
+...
+---
+name:            expand_brcc_literal_slot_clobber_order
+alignment:       2
+tracksRegLiveness: true
+registers:
+  - { id: 0, class: gpr, preferred-register: '', flags: [  ] }
+  - { id: 1, class: gpr, preferred-register: '', flags: [  ] }
+liveins:
+  - { reg: '$r1', virtual-reg: '%0' }
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    successors: %bb.1(0x40000000), %bb.2(0x40000000)
+    liveins: $r1
+
+    %0:gpr = COPY $r1
+    %1:gpr = COPY %0
+    %0:gpr = LDI64 @ext_target
+    BRCC %bb.1, 1, killed %1, $r0
+    JMP %bb.2
+
+  bb.1:
+    $r1 = COPY %0
+    RET $r1, implicit $r14
+
+  bb.2:
+    $r1 = COPY %0
+    RET $r1, implicit $r14
+
+...
+
+# CHECK-LABEL: name:            expand_brcc_literal_slot_clobber_order
+# CHECK: bb.0.entry:
+# CHECK: JMP 4
+# CHECK-NEXT: LDI64_RELOC_DATA @ext_target
+# CHECK-NEXT: %0:gpr = LOAD_PCREL -5
+# CHECK-NEXT: TEST $r0, killed %1
+# CHECK-NEXT: JUMP_Z %bb.2

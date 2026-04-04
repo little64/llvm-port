@@ -1,0 +1,50 @@
+# RUN: llc -mtriple=little64 -run-pass=little64-expand-pseudos -o - %s | FileCheck %s
+
+--- |
+  target triple = "little64"
+
+  define i64 @expand_brcc_same_block_clobber_source_redef(i64 %lhs, i64 %copy_src) {
+  entry:
+    ret i64 %lhs
+  }
+...
+---
+name:            expand_brcc_same_block_clobber_source_redef
+alignment:       2
+tracksRegLiveness: true
+liveins:
+  - { reg: '$r10' }
+  - { reg: '$r5' }
+  - { reg: '$r11' }
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    successors: %bb.1(0x40000000), %bb.2(0x40000000)
+    liveins: $r5, $r10, $r11
+
+    $r3 = MOVErr killed $r10, 0
+    $r10 = MOVErr killed $r5, 0
+    $r12 = LDI 16
+    $r12 = ADD $r11, $r12, implicit-def $flags
+    $r5 = LOAD killed $r12, 0
+    BRCC %bb.1, 1, killed $r3, $r0
+    JMP %bb.2
+
+  bb.1:
+    liveins: $r10
+
+    RET $r10, implicit $r14
+
+  bb.2:
+    $r1 = MOVErr $r0, 0
+    RET $r1, implicit $r14
+
+...
+
+# CHECK-LABEL: name:            expand_brcc_same_block_clobber_source_redef
+# CHECK: bb.0.entry:
+# CHECK: $r12 = LDI 16
+# CHECK-NEXT: $r12 = ADD $r11, $r12
+# CHECK-NEXT: $r5 = LOAD killed $r12, 0
+# CHECK-NEXT: TEST $r0, killed $r3
+# CHECK: JUMP_Z %bb.2

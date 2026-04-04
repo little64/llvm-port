@@ -3227,6 +3227,20 @@ def PPCSystemLibrary
            AvailableIf<__stack_chk_guard, isNotOSAIXAndNotOSOpenBSD>)>;
 
 //===----------------------------------------------------------------------===//
+// Little64 Runtime Libcalls
+//===----------------------------------------------------------------------===//
+
+def isLittle64 : RuntimeLibcallPredicate<
+  "TT.getArch() == Triple::little64">;
+
+def Little64SystemLibrary
+    : SystemRuntimeLibrary<isLittle64,
+      (add DefaultRuntimeLibcallImpls,
+           Int128RTLibcalls,
+           DefaultStackProtector,
+           DefaultSafeStackGlobals)>;
+
+//===----------------------------------------------------------------------===//
 // RISCV Runtime Libcalls
 //===----------------------------------------------------------------------===//
 

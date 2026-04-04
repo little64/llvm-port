@@ -625,6 +625,8 @@ std::string Triple::computeDataLayout(StringRef ABIName) const {
     return computeWebAssemblyDataLayout(*this);
   case Triple::ve:
     return computeVEDataLayout(*this);
+  case Triple::little64:
+    return "e-m:e-p:64:64-i8:8-i16:16-i32:32-i64:64-i128:128-n32:64-S64";
 
   case Triple::amdil:
   case Triple::amdil64:

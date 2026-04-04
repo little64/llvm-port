@@ -1,0 +1,38 @@
+
+#ifndef ELF_RELOC
+#error "ELF_RELOC must be defined"
+#endif
+
+// No relocation
+ELF_RELOC(R_LITTLE64_NONE,     0)
+// 64-bit absolute address
+ELF_RELOC(R_LITTLE64_ABS64,    1)
+// 32-bit absolute address
+ELF_RELOC(R_LITTLE64_ABS32,    2)
+// 6-bit PC-relative instruction-unit offset (non-JUMP LS-PCREL instructions)
+ELF_RELOC(R_LITTLE64_PCREL6,   3)
+// 10-bit PC-relative instruction-unit offset (JUMP.* conditional branches)
+ELF_RELOC(R_LITTLE64_PCREL10,  4)
+// 13-bit PC-relative instruction-unit offset (unconditional JUMP)
+ELF_RELOC(R_LITTLE64_PCREL13,  5)
+// Dynamic: base address + addend (PIE/DSO base relocation)
+ELF_RELOC(R_LITTLE64_RELATIVE, 6)
+// Dynamic: copy symbol data from shared object to executable
+ELF_RELOC(R_LITTLE64_COPY,     7)
+// Dynamic: PLT GOT entry — patched by the dynamic linker at bind time
+ELF_RELOC(R_LITTLE64_JUMP_SLOT, 8)
+// Dynamic: GOT entry for data/function address binding
+ELF_RELOC(R_LITTLE64_GLOB_DAT, 9)
+// 64-bit GOT-relative offset (used in literal slots to reach GOT entries)
+ELF_RELOC(R_LITTLE64_GOT64,    10)
+// TLS: module ID for dynamic TLS
+ELF_RELOC(R_LITTLE64_TLS_DTPMOD64, 11)
+// TLS: offset within module (General Dynamic / Local Dynamic)
+ELF_RELOC(R_LITTLE64_TLS_DTPREL64, 12)
+// TLS: offset from thread pointer (Initial Exec / Local Exec)
+ELF_RELOC(R_LITTLE64_TLS_TPREL64,  13)
+ELF_RELOC(R_LITTLE64_IRELATIVE,    14)
+// 32-bit PC-relative data offset (jump tables, label differences)
+ELF_RELOC(R_LITTLE64_PCREL32,     15)
+// TLS Initial Exec: GOT entry containing TP-relative offset
+ELF_RELOC(R_LITTLE64_TLS_GOTTPREL, 16)

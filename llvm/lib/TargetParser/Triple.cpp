@@ -82,6 +82,7 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   case thumb:          return "thumb";
   case thumbeb:        return "thumbeb";
   case ve:             return "ve";
+  case little64:       return "little64";
   case wasm32:         return "wasm32";
   case wasm64:         return "wasm64";
   case x86:            return "i386";
@@ -251,6 +252,7 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
     return "riscv";
 
   case ve:          return "ve";
+  case little64:    return "little64";
   case csky:        return "csky";
 
   case loongarch32:
@@ -519,6 +521,7 @@ Triple::ArchType Triple::getArchTypeForLLVMName(StringRef Name) {
       .Case("renderscript32", renderscript32)
       .Case("renderscript64", renderscript64)
       .Case("ve", ve)
+      .Case("little64", little64)
       .Case("csky", csky)
       .Case("loongarch32", loongarch32)
       .Case("loongarch64", loongarch64)
@@ -666,6 +669,7 @@ Triple::ArchType Triple::parseArch(StringRef ArchName) {
           .Case("renderscript64", Triple::renderscript64)
           .Case("shave", Triple::shave)
           .Case("ve", Triple::ve)
+          .Case("little64", Triple::little64)
           .Case("wasm32", Triple::wasm32)
           .Case("wasm64", Triple::wasm64)
           .Case("csky", Triple::csky)
@@ -1007,6 +1011,7 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
   case Triple::hsail:
   case Triple::kalimba:
   case Triple::lanai:
+  case Triple::little64:
   case Triple::loongarch32:
   case Triple::loongarch64:
   case Triple::m68k:
@@ -1798,6 +1803,7 @@ unsigned Triple::getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::spir64:
   case llvm::Triple::spirv64:
   case llvm::Triple::systemz:
+  case llvm::Triple::little64:
   case llvm::Triple::ve:
   case llvm::Triple::wasm64:
   case llvm::Triple::x86_64:
@@ -1844,6 +1850,7 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::avr:
   case Triple::bpfeb:
   case Triple::bpfel:
+  case Triple::little64:
   case Triple::msp430:
   case Triple::systemz:
   case Triple::ve:
@@ -1961,6 +1968,7 @@ Triple Triple::get64BitArchVariant() const {
   case Triple::sparcv9:
   case Triple::spir64:
   case Triple::spirv64:
+  case Triple::little64:
   case Triple::systemz:
   case Triple::ve:
   case Triple::wasm64:
@@ -2161,6 +2169,7 @@ bool Triple::isLittleEndian() const {
   case Triple::x86_64:
   case Triple::xcore:
   case Triple::xtensa:
+  case Triple::little64:
     return true;
   default:
     return false;
@@ -2389,6 +2398,7 @@ ExceptionHandling Triple::getDefaultExceptionHandling() const {
   case Triple::csky:
   case Triple::hexagon:
   case Triple::lanai:
+  case Triple::little64:
   case Triple::m68k:
   case Triple::msp430:
   case Triple::systemz:

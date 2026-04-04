@@ -1,0 +1,45 @@
+# RUN: llc -mtriple=little64 -relocation-model=pic -run-pass=little64-expand-pseudos -o - %s | FileCheck %s
+
+--- |
+  target triple = "little64"
+
+  declare i64 @ext_target(i64)
+
+  define i64 @expand_pic_literal_slots(i64 %x) {
+  entry:
+    %call = call i64 @ext_target(i64 %x)
+    ret i64 %call
+  }
+...
+---
+name:            expand_pic_literal_slots
+alignment:       2
+tracksRegLiveness: true
+registers:
+  - { id: 0, class: gpr, preferred-register: '', flags: [  ] }
+  - { id: 1, class: gpr, preferred-register: '', flags: [  ] }
+liveins:
+  - { reg: '$r10', virtual-reg: '%0' }
+machineFunctionInfo: {}
+body:             |
+  bb.0.entry:
+    liveins: $r10
+
+    %0:gpr = COPY $r10
+    %1:gpr = LDI64_GOT @ext_target, implicit-def $r12
+    CALL %1, implicit-def $r1, implicit-def dead $r2, implicit-def dead $r3, implicit-def dead $r4, implicit-def dead $r5, implicit-def dead $r6, implicit-def dead $r7, implicit-def dead $r8, implicit-def dead $r9, implicit-def dead $r10, implicit-def dead $r12, implicit-def $r14, implicit-def dead $flags, implicit $r13
+    RET $r1, implicit $r14
+
+...
+
+# LDI64_GOT @ext_target expands to a GOT-indirect literal-slot load:
+# CHECK-LABEL: name:            expand_pic_literal_slots
+# CHECK: JMP 4
+# CHECK-NEXT: LDI64_RELOC_DATA @ext_target
+# CHECK-NEXT: $r12 = MOVE_PCREL -5
+# CHECK-NEXT: %1:gpr = LOAD $r12, 0
+# CHECK-NEXT: %1:gpr = ADD $r12, %1
+# CHECK-NEXT: %1:gpr = LOAD %1, 0
+# CALL %1 (register target) expands to indirect call:
+# CHECK: $r14 = MOVErr $r15, 2
+# CHECK-NEXT: $r15 = MOVErr %1, 0
