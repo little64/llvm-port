@@ -71,6 +71,12 @@ bool Little64RegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
       TFI->getFrameIndexReference(MF, FrameIndex, BaseReg).getFixed();
   Offset += MI.getOperand(FIOperandNum + 1).getImm();
 
+  // During stack-arg calls the generic CALLSEQ pseudos temporarily move R13.
+  // Frame index references that still use SP as their base must account for
+  // that transient displacement or they'll read/write the wrong local slot.
+  if (BaseReg == Little64::R13)
+    Offset += SPAdj;
+
   // In FP mode, FP is established after pushing the old FP value.
   // Incoming stack arguments are modeled as fixed objects at non-negative
   // offsets from the entry SP and therefore need to skip that saved-FP slot.

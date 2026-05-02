@@ -5,13 +5,13 @@
 declare void @var_sink(i64, ...)
 
 ; CHECK-LABEL: call_vararg:
-; CHECK: LDI     #32, R12
+; CHECK: LDI     #40, R12
 ; CHECK: SUB     R12, R13
+; CHECK: MOVE    R13, R1
+; CHECK: STORE   [R1], R10
 ; CHECK: .quad var_sink
 ; CHECK: MOVE    R15, R14+2
 ; CHECK: MOVE    R1, R15
-; CHECK: LDI     #32, R12
-; CHECK: ADD     R12, R13
 
 define void @call_vararg(i64 %a, i64 %b, i64 %c, i64 %d) {
 entry:

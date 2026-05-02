@@ -5,11 +5,13 @@
 declare i64 @sink_i64(i64, ...)
 
 ; CHECK-LABEL: call_vararg_i32:
-; CHECK: LDI     #24, R12
+; CHECK: LDI     #48, R12
 ; CHECK: SUB     R12, R13
+; CHECK: MOVE    R13, R1
 ; CHECK: STORE   [R1], R2
 ; CHECK: STORE   [R2], R9
 ; CHECK: STORE   [R1], R10
+; CHECK-NEXT: JUMP    @+4
 ; CHECK: .quad   sink_i64
 ; CHECK: MOVE    R15, R14+2
 define i64 @call_vararg_i32(i32 %a, i32 %b) {
@@ -19,8 +21,9 @@ entry:
 }
 
 ; CHECK-LABEL: call_vararg_smallints:
-; CHECK: LDI     #32, R12
+; CHECK: LDI     #64, R12
 ; CHECK: SUB     R12, R13
+; CHECK: MOVE    R13, R1
 ; CHECK: STORE   [R1], R2
 ; CHECK: STORE   [R2], R8
 ; CHECK: STORE   [R2], R9
@@ -33,8 +36,9 @@ entry:
 }
 
 ; CHECK-LABEL: call_vararg_many:
-; CHECK: LDI     #72, R12
+; CHECK: LDI     #80, R12
 ; CHECK: SUB     R12, R13
+; CHECK: MOVE    R13, R1
 ; CHECK: LDI     #123, R2
 ; CHECK: LDI     #99, R2
 ; CHECK: STORE   [R2], R6

@@ -203,6 +203,9 @@ MachineBasicBlock::iterator
 Little64FrameLowering::eliminateCallFramePseudoInstr(
     MachineFunction &MF, MachineBasicBlock &MBB,
     MachineBasicBlock::iterator I) const {
+  if (hasReservedCallFrame(MF))
+    return MBB.erase(I);
+
   const Little64InstrInfo &TII =
       *static_cast<const Little64InstrInfo *>(MF.getSubtarget().getInstrInfo());
   DebugLoc DL = I->getDebugLoc();
