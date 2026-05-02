@@ -900,6 +900,7 @@ set(riscv64_SOURCES
 
 set(little64_SOURCES
   little64/fp_mode.c
+  little64/udivmoddi4.c
   ${GENERIC_SOURCES}
   ${GENERIC_TF_SOURCES}
 )
